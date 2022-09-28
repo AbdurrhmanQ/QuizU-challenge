@@ -2,6 +2,7 @@
 
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:quizme/Services/Preferences.dart';
 import 'package:quizme/Services/RemoteAPI.dart';
 import 'package:quizme/main.dart';
 import 'package:quizme/models/Question.dart';
@@ -210,6 +211,7 @@ class _quizPageState extends State<quizPage> {
 
   Future<void> showFinishAlert() {
     _remoteAPI.postScore(score);
+    Preferences.saveScore(score.toString());
     Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => Home()),
@@ -239,6 +241,9 @@ class _quizPageState extends State<quizPage> {
   }
 
   Future<void> showWrongAlert() {
+    _remoteAPI.postScore(score);
+    Preferences.saveScore(score.toString());
+
     Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => Home()),

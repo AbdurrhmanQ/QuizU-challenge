@@ -1,11 +1,14 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:quizme/Pages/otpPage.dart';
 import 'package:quizme/Pages/quizPage.dart';
 import 'package:quizme/Services/Preferences.dart';
 import 'package:quizme/Services/RemoteAPI.dart';
 import 'package:quizme/models/Leaderboard.dart';
+import 'package:quizme/models/Profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Pages/loginPage.dart';
 
@@ -57,6 +60,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int _currentIndex = 0;
   late Widget body;
+  Profile? user;
   // late RemoteAPI _remoteAPI;
 
   @override
@@ -237,11 +241,111 @@ class _HomeState extends State<Home> {
   }
 
   profile() {
-    body = Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [Text('dataPF')],
-      ),
+    // getProfile();
+    body = FutureBuilder(
+      future: _remoteAPI.fetchProfile(),
+      builder: (context, snapshot) => snapshot.hasData
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: MaterialButton(
+                      onPressed: () async {
+                        await Preferences.deleteToken();
+                        exit(0);
+                      },
+                      child: Icon(Icons.logout),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      child: Card(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Profile',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 28,
+                              ),
+                            ),
+                            SizedBox(
+                              height: 25,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                'Name: ${snapshot.data?.name}',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'Mobile: ${snapshot.data?.mobile}',
+                              style: TextStyle(
+                                fontSize: 22,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      child: Card(
+                        child: Column(
+                          children: [
+                            Text(
+                              'My Scores',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 28,
+                              ),
+                            ),
+                            Expanded(
+                              child: FutureBuilder(
+                                  future: Preferences.getScores(),
+                                  builder: (context, snapshot) {
+                                    List<String>? scores = snapshot.data;
+
+                                    return ListView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: scores?.length ?? 0,
+                                        itemBuilder: (context, index) {
+                                          return Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(scores?[index] ?? ''),
+                                          );
+                                        });
+                                  }),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            )
+          : Center(
+              child: CircularProgressIndicator(
+              color: Color(0xFF4C6793),
+            )),
     );
+  }
+
+  getProfile() async {
+    user = await _remoteAPI.fetchProfile();
+    setState(() {
+      user = user;
+    });
+    print(user!.mobile);
   }
 }
