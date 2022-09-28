@@ -84,7 +84,7 @@ class _nameState extends State<name> {
                       key: _formKey,
                       child: TextFormField(
                         controller: controller,
-                        keyboardType: TextInputType.number,
+                        keyboardType: TextInputType.name,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your name';
