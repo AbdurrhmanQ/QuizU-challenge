@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:phone_number/phone_number.dart';
-import 'package:quizme/Services/Preferences.dart';
+import 'package:quizme/Pages/loginPage.dart';
+import 'package:quizme/Services/RemoteAPI.dart';
+import 'package:quizme/main.dart';
 
-import 'otpPage.dart';
+class name extends StatefulWidget {
+  name({Key? key}) : super(key: key);
 
-class loginPage extends StatefulWidget {
-  loginPage({Key? key}) : super(key: key);
   @override
-  _loginPageState createState() => _loginPageState();
+  _nameState createState() => _nameState();
 }
 
-var mobile;
-bool isNew = false;
-
-class _loginPageState extends State<loginPage> {
-  String springFieldSA = '+966569322346';
-  late PhoneNumberEditingController controller;
-  // PhoneNumber phoneNumber = await
-  RegionInfo region = RegionInfo(name: 'SA', code: 'SA', prefix: 966);
-
+class _nameState extends State<name> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController controller;
+  late RemoteAPI _remoteAPI;
+
   @override
   void initState() {
+    controller = TextEditingController();
+    _remoteAPI = RemoteAPI();
     super.initState();
-    controller =
-        PhoneNumberEditingController(PhoneNumberUtil(), regionCode: 'SA');
   }
 
   @override
@@ -37,26 +32,26 @@ class _loginPageState extends State<loginPage> {
           padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
           child: Column(
             children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  // ignore: prefer_const_constructors
+                  child: Icon(
+                    Icons.arrow_back,
+                    size: 32,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
               const SizedBox(
                 height: 18,
-              ),
-              Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: Image.asset(
-                  'images/phoneNumber.jpg',
-                  fit: BoxFit.cover,
-                ),
               ),
               const SizedBox(
                 height: 24,
               ),
               const Text(
-                'Registration',
+                'Registeration',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -66,7 +61,7 @@ class _loginPageState extends State<loginPage> {
                 height: 10,
               ),
               const Text(
-                "Add your phone number.",
+                "Enter your Name",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -88,23 +83,21 @@ class _loginPageState extends State<loginPage> {
                     Form(
                       key: _formKey,
                       child: TextFormField(
-                        maxLength: 9,
-
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your number';
-                          } else if (!value.startsWith('5')) {
-                            return 'Please enter valid SA number';
-                          } else if (value.length != 9) {
-                            return 'Please make sure your number is correct';
-                          }
-                          return null;
-                        },
                         controller: controller,
                         keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          } else if (value.length < 2) {
+                            return 'Please enter a name';
+                          }
+
+                          return null;
+                        },
+                        textAlign: TextAlign.center,
                         // ignore: prefer_const_constructors
                         style: TextStyle(
-                          fontSize: 17,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                         decoration: InputDecoration(
@@ -114,31 +107,15 @@ class _loginPageState extends State<loginPage> {
                           errorBorder: OutlineInputBorder(
                               borderSide: BorderSide(color: Colors.black12),
                               borderRadius: BorderRadius.circular(10)),
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade500,
-                            letterSpacing: 1,
-                            fontWeight: FontWeight.normal,
-                          ),
-                          hintText: '569343828',
                           counterText: '',
                           enabledBorder: OutlineInputBorder(
-                              borderSide:
-                                  const BorderSide(color: Colors.black12),
+                              borderSide: BorderSide(color: Colors.black12),
                               borderRadius: BorderRadius.circular(10)),
                           focusedBorder: OutlineInputBorder(
-                              borderSide:
-                                  const BorderSide(color: Colors.black12),
+                              borderSide: BorderSide(color: Colors.black12),
                               borderRadius: BorderRadius.circular(10)),
                           prefix: Padding(
                             padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              '+966',
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
                           ),
                         ),
                       ),
@@ -151,20 +128,13 @@ class _loginPageState extends State<loginPage> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            mobile = '0' + controller.text;
-                            var oldNumber = Preferences.getmobile();
+                            var name = controller.text;
+                            await _remoteAPI.userName(name);
 
-                            if (oldNumber == null ||
-                                oldNumber == '' ||
-                                oldNumber != mobile) {
-                              isNew = true;
-                            } else {
-                              Preferences.setMobile(mobile);
-                            }
-
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (context) => Otp()),
-                            );
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Home()));
                           }
                         },
                         style: ButtonStyle(
@@ -182,26 +152,17 @@ class _loginPageState extends State<loginPage> {
                         child: const Padding(
                           padding: EdgeInsets.all(14.0),
                           child: Text(
-                            'Send',
+                            'Verify',
                             style: TextStyle(fontSize: 16),
                           ),
                         ),
                       ),
-                    ),
+                    )
                   ],
                 ),
               ),
-              SizedBox(
-                height: 28,
-              ),
-              const Text(
-                "make sure you enter the correct number",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black38,
-                ),
-                textAlign: TextAlign.center,
+              const SizedBox(
+                height: 18,
               ),
             ],
           ),

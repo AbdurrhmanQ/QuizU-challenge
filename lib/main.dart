@@ -1,8 +1,24 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
+import 'package:quizme/Pages/otpPage.dart';
+import 'package:quizme/Pages/quizPage.dart';
+import 'package:quizme/Services/Preferences.dart';
+import 'package:quizme/Services/RemoteAPI.dart';
+import 'package:quizme/models/Leaderboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'Pages/loginPage.dart';
 
-void main() {
+var token;
+var isLogged;
+RemoteAPI _remoteAPI = RemoteAPI();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  token = await Preferences.getToken();
+  isLogged = await _remoteAPI.checkToken();
+
+  print("this is main  " + token);
   runApp(quizMe());
 }
 
@@ -12,7 +28,21 @@ class quizMe extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      initialRoute: isLogged ? 'home' : 'login',
+      routes: {
+        'login': (context) => loginPage(),
+        'home': (context) => Home(),
+        'otp': (context) => Otp(),
+        'quiz': (context) => quizPage()
+      },
       home: Home(),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+          scaffoldBackgroundColor: Color(0xfff7f6fb),
+          textTheme: TextTheme(
+            // bodyText1: TextStyle(color: Colors.grey.shade700),
+            bodyText2: TextStyle(color: Colors.grey.shade800),
+          )),
     );
   }
 }
@@ -27,6 +57,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int _currentIndex = 0;
   late Widget body;
+  // late RemoteAPI _remoteAPI;
 
   @override
   void initState() {
@@ -40,13 +71,14 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     // screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      backgroundColor: Color(0xFF8BBCCC),
+      backgroundColor: Color(0xfff7f6fb),
       appBar: AppBar(
-        backgroundColor: Color(0xFF4C6793),
+        elevation: 0,
+        backgroundColor: Color(0xfff7f6fb),
         centerTitle: true,
         title: Text(
-          'QuizMe',
-          style: TextStyle(fontSize: 36),
+          'QuizU',
+          style: TextStyle(fontSize: 36, color: Color(0xFF4C6793)),
         ),
       ),
       body: body,
@@ -117,26 +149,35 @@ class _HomeState extends State<Home> {
               style: TextStyle(fontSize: 22),
             ),
           ),
-          MaterialButton(
-            onPressed: () {},
-            child: Text(
-              'Quiz Me!',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-              ),
-            ),
-            color: Color(0xFF4C6793),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
           SizedBox(
             width: 310,
             child: Text(
               'Answer as much questions correctly within 2 minutes',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20),
+              style: TextStyle(fontSize: 16),
             ),
+          ),
+          MaterialButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => quizPage(),
+                  ));
+            },
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text(
+                'Quiz Me!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            color: Color(0xFF4C6793),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
         ],
       ),
@@ -144,38 +185,55 @@ class _HomeState extends State<Home> {
   }
 
   leaderBoard() {
-    body = Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Leaderboard',
-            style: TextStyle(fontSize: 24),
-          ),
-          SizedBox(
-            height: 20,
-          ),
-          ListView.builder(
-            shrinkWrap: true,
-            clipBehavior: Clip.none,
-            itemCount: 10,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  // ignore: prefer_const_literals_to_create_immutables
-                  children: [
-                    Text('name'),
-                    Text('Score'),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
+    body = FutureBuilder(
+        future: _remoteAPI.fetchLeaderboard(),
+        builder: (context, snapshot) {
+          List<Leaderboard>? top10 = snapshot.data;
+          return Center(
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(
+                'Leaderboard',
+                style: TextStyle(fontSize: 24),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              snapshot.hasData
+                  ? ListView.builder(
+                      shrinkWrap: true,
+                      clipBehavior: Clip.none,
+                      itemCount: top10!.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              // ignore: prefer_const_literals_to_create_immutables
+                              children: [
+                                Center(
+                                  child: Text(
+                                    top10[index].name,
+                                  ),
+                                ),
+                                Center(
+                                  child: Text(
+                                    top10[index].score.toString(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : CircularProgressIndicator(
+                      color: Color(0xFF4C6793),
+                    )
+            ]),
+          );
+        });
   }
 
   profile() {
