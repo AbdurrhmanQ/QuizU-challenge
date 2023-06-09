@@ -321,7 +321,10 @@ class _HomeState extends State<Home> {
                                         itemBuilder: (context, index) {
                                           return Padding(
                                             padding: const EdgeInsets.all(8.0),
-                                            child: Text(scores?[index] ?? ''),
+                                            child: Text(
+                                              scores?[index] ?? '',
+                                              textAlign: TextAlign.center,
+                                            ),
                                           );
                                         });
                                   }),
